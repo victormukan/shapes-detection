@@ -20,40 +20,23 @@ def detect_circles(img):
   edges = cv2.Canny(blur, 75, 140)
 
 
-  circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, 22, param1=8, param2=27,
-                              minRadius=30, maxRadius=53)
-
+  circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, 22, param1=8, param2=27, minRadius=30, maxRadius=53)
+  
   draw_circles_on_image(edges, circles)
 
   return edges
 
 
-  # cv2.imshow('circles', img)
-
-  # rho, theta, thresh = 2, np.pi/180, 400
-  # lines = cv2.HoughLines(bin_img, rho, theta, thresh)
-
-  # cv2.imshow("lines", lines)
-
-  # imgBlur = cv2.GaussianBlur(imgGray, (5, 5), 1)
-  # imgCanny = cv2.Canny(imgGray, 100, 200)
-  # cv2.imshow("imgGray", imgGray)
-  # cv2.imshow("imgCanny", imgCanny)
-  # return blur
-
-
 def detect_lines(img):
-  filter = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-  sharpen = cv2.filter2D(img, -1, filter)
-  gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-  blur = cv2.blur(gray, (3, 3))
+  imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-  # edges = cv2.Canny(blur, 100, 200)
-  # lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=10, maxLineGap=250)
-  # for line in lines:
-  #     x1, y1, x2, y2 = line[0]
-  #     cv2.line(edges, (x1, y1), (x2, y2), (255, 0, 0), 3)
-  return blur
+  blur = cv2.medianBlur(imgGray, 5)
+  edges = cv2.Canny(blur, 15, 40)
+  lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=10, maxLineGap=250)
+  for line in lines:
+      x1, y1, x2, y2 = line[0]
+      cv2.line(edges, (x1, y1), (x2, y2), (255, 0, 0), 3)
+  return edges
 
 def draw_circles_on_image(img, circles):
   if circles is not None:
