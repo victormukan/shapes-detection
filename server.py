@@ -9,8 +9,6 @@ BUCKET = os.environ.get("AWS_BUCKET")
 
 
 app = Flask(__name__)
-app.run(host="localhost", port=4000)
-
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -30,10 +28,7 @@ def upload_file():
   cv2.imwrite("tmp/circles.jpg", circles)
 
   lines = rec.detect_lines_and_intersections(img)
-  cv2.imwrite(f"tmp/lines.jpg", lines)
-
-
-  f"https://shapes-detection-opencv.s3.eu-west-2.amazonaws.com/0940e870-34dc-4d52-b6a6-e8a03015d94e-lines.jpg"
+  cv2.imwrite("tmp/lines.jpg", lines)
   
   s3.upload_to_aws("tmp/image.jpg", f"{id}-raw.jpg")
   s3.upload_to_aws("tmp/circles.jpg", f"{id}-circles.jpg")
