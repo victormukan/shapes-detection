@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 import glob
-from dotenv import load_dotenv
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 
 import src.recognition as rec
 

@@ -3,3 +3,6 @@ circle-results/
 line-results/
 .env
 __pycache__/
+
+tmp/*
+!tmp/.gitkeep 

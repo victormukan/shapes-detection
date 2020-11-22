@@ -96,8 +96,8 @@ def detect_lines_and_intersections(img):
   for point in intersections:
     pt = (point[0][0], point[0][1])
     length = 5
-    cv2.line(img_with_segmented_lines, (pt[0], pt[1]-length), (pt[0], pt[1]+length), (255, 0, 255), 1) # vertical line
-    cv2.line(img_with_segmented_lines, (pt[0]-length, pt[1]), (pt[0]+length, pt[1]), (255, 0, 255), 1)
+    cv2.line(img_with_segmented_lines, (pt[0], pt[1]-length), (pt[0], pt[1]+length), (255, 0, 255), 2) # vertical line
+    cv2.line(img_with_segmented_lines, (pt[0]-length, pt[1]), (pt[0]+length, pt[1]), (255, 0, 255), 2)
 
   return img_with_segmented_lines
 
@@ -173,4 +173,4 @@ def drawLines(img, lines, color=(0,0,255)):
       y1 = int(y0 + 1000*(a))
       x2 = int(x0 - 1000*(-b))
       y2 = int(y0 - 1000*(a))
-      cv2.line(img, (x1,y1), (x2,y2), color, 1)
+      cv2.line(img, (x1,y1), (x2,y2), color, 2)
