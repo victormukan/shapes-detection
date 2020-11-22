@@ -1,2 +1,4 @@
-opencv-python=4.4.0.44
-numpy=1.19
+opencv-python==4.4.0.44
+numpy==1.19
+boto3==1.16.21
+python-dotenv==0.15.0

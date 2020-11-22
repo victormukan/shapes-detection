@@ -1,3 +1,5 @@
 .DS_Store
 circle-results/
 line-results/
+.env
+__pycache__/

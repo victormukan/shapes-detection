@@ -1,62 +1,29 @@
 import cv2
 import numpy as np
 import glob
+from dotenv import load_dotenv
+load_dotenv()
 
-def cv_size(img):
-  return tuple(img.shape[1::-1])
+import src.recognition as rec
 
-def detect_circles(img):
+import src.s3 as s3
 
-  # filter = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-  # sharpen = cv2.filter2D(img, -1, filter)
+# s3.upload_to_aws("images/test1.jpg", "testfile.jpg")
+# image_name = "images/test3.jpg"
+# img = cv2.imread(image_name, cv2.IMREAD_COLOR)
 
-  imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-  blur = cv2.medianBlur(imgGray, 5)
-  # blur = cv2.GaussianBlur(img,(5,5),0)
-
-  # bin_img = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-
-  edges = cv2.Canny(blur, 75, 140)
-
-
-  circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, 22, param1=8, param2=27, minRadius=30, maxRadius=53)
-  
-  draw_circles_on_image(edges, circles)
-
-  return edges
-
-
-def detect_lines(img):
-  imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-  blur = cv2.medianBlur(imgGray, 5)
-  edges = cv2.Canny(blur, 15, 40)
-  lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=10, maxLineGap=250)
-  for line in lines:
-      x1, y1, x2, y2 = line[0]
-      cv2.line(edges, (x1, y1), (x2, y2), (255, 0, 0), 3)
-  return edges
-
-def draw_circles_on_image(img, circles):
-  if circles is not None:
-    circles = np.uint16(np.around(circles))
-    for i in circles[0, :]:
-        center = (i[0], i[1])
-        # circle center
-        cv2.circle(img, center, 1, (0, 100, 100), 3)
-        # circle outline
-        radius = i[2]
-        cv2.circle(img, center, radius, (255, 0, 255), 3)
+# lines = rec.detect_lines_and_intersections(img)
+# cv2.imwrite(f"line-results/{image_name.split('/')[1]}", lines)
 
 
 for image_name in glob.glob("images/*.jpg"):
   print(image_name.split('/')[1])
   img = cv2.imread(image_name, cv2.IMREAD_COLOR)
-  circles = detect_circles(img)
+
+  circles = rec.detect_circles(img)
   cv2.imwrite(f"circle-results/{image_name.split('/')[1]}", circles)
 
-  lines = detect_lines(img)
+  lines = rec.detect_lines_and_intersections(img)
   cv2.imwrite(f"line-results/{image_name.split('/')[1]}", lines)
 
 
