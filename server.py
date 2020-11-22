@@ -45,3 +45,9 @@ def upload_file():
     }
   }
 
+
+@app.route('/hc', methods=['GET'])
+def health_check():
+  return {
+    "body": "ok"
+  }
