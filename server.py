@@ -38,7 +38,7 @@ def upload_file():
 
   intermediate = []
   if show_intermediate: 
-    for i, int_img in circles['intermediate_images']:
+    for i, int_img in enumerate(circles['intermediateImages']):
       cv2.imwrite(f"tmp/intermediate-{i}.jpg", int_img)
       s3.upload_to_aws(f"tmp/intermediate-{i}.jpg", f"{id}-intermediate-{i}.jpg")
       intermediate.append(f"https://{BUCKET}.s3.eu-west-2.amazonaws.com/{id}-intermediate-{i}.jpg")
@@ -52,7 +52,7 @@ def upload_file():
       'maxCenterDistance': circles['maxCenterDistance'],
       'circlesCount': circles['circlesCount'],
       'intermediate': intermediate,
-      'isIncorrect': circles['maxCenterDistance'] > 0.1,
+      'isIncorrect': f"{circles['maxCenterDistance'] > 0.1}",
       'acceptableDistance': 0.1
     }
   }
