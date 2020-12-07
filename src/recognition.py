@@ -2,73 +2,106 @@ import cv2
 import numpy as np
 from collections import defaultdict
 import sys
-import math  
+from .lines import distance_between_two_points, find_lines_between_points
 
+import time
 
 def cv_size(img):
   return tuple(img.shape[1::-1])
 
-def detect_circles(img):
+def detect_circles(image):
+  img = image.copy()
+  start = time.time()
+
+  intermediate_images = []
+
   imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+  intermediate_images.append(imgGray)
 
   blur = cv2.medianBlur(imgGray, 5)
+  intermediate_images.append(blur)
 
-  edges = cv2.Canny(blur, 75, 140)
+  edges = cv2.Canny(blur, 70, 140)
+  intermediate_images.append(edges)
 
-  circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, 22, param1=8, param2=27, minRadius=30, maxRadius=53)
+  size = cv_size(img)
+  dimension = min(size)
+
+  circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, dimension/30, param1=8, param2=34, 
+    minRadius=int(dimension/20), maxRadius=int(dimension/10))
   
-  centers = []
   if circles is not None:
     circles = np.uint16(np.around(circles))
+
+    centers = []
+    radiuses = []
     for i in circles[0, :]:
       center = (i[0], i[1])
-      centers.append(center)
 
-      cv2.circle(img, center, 1, (0, 0, 255), 7)
-      radius = i[2]
-      cv2.circle(img, center, radius, (255, 0, 255), 3)
-  
-  if len(centers) == 2:
-    print(distance_between_two_points(centers[0], centers[1]))
-  return img
+      if (filter_circles_not_in_center(center, dimension, dimension/4)):
+        centers.append(center)
+        radius = i[2]
+        radiuses.append(radius)
+
+        cv2.circle(img, center, 1, (0, 0, 255), 7)
+        cv2.circle(img, center, radius, (255, 0, 255), 3)
+      
+
+    if (len(radiuses) > 0 and len(centers) > 0):
+      if (len(radiuses) == 1):
+        end = time.time()
+        print("Time elapsed ", end - start)
+        return { 'image': img, 'intermediateImages': intermediate_images, 'maxCenterDistance': 0, 'circlesCount': len(centers) }
+
+      avg_radius = sum(radiuses) / len(radiuses)
 
 
-def distance_between_two_points(x1, x2):
-  return math.sqrt(math.pow(int(x1[0]) - int(x2[0]), 2) + math.pow(int(x1[1]) - int(x2[1]), 2)) 
+      center_distances = find_lines_between_points(centers)
+      longest = max(center_distances, key=lambda x:x['length'])
 
-def detect_lines(img):
+      print(f"longest {longest['length']} radius {avg_radius}")
+
+      max_center_distance = longest['length'] / avg_radius * 1.5
+
+      print ('distance', max_center_distance)
+      for line in center_distances:
+        x1, y1 = line['x']
+        x2, y2 = line['y']
+        cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
+        
+      end = time.time()
+      print("Time elapsed ", end - start)
+      return { 'image': img, 'intermediateImages': intermediate_images, 'maxCenterDistance': max_center_distance, 'circlesCount': len(centers) }
+
+  end = time.time()
+  print("Time elapsed ", end - start)
+  return { 'image': img, 'intermediateImages': [], 'maxCenterDistance': 0, 'circlesCount': 0 }
+
+
+def filter_circles_not_in_center(center, size, delta):
+  if center[0] > size - delta or center[0] < delta or center[1] > size - delta or center[1] < delta:
+    return False
+  return True
+
+
+
+def detect_lines(image):
+  img = image.copy()
   imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
   blur = cv2.medianBlur(imgGray, 5)
   edges = cv2.Canny(blur, 15, 40)
-  lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=10, maxLineGap=250)
+  lines = cv2.HoughLinesP(edges, 1, np.pi/180, 80, minLineLength=10, maxLineGap=250)
 
   for line in lines:
     x1, y1, x2, y2 = line[0]
-    cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 1)
+    cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
 
-  # print(lines)
-
-  # for line in segmented[0]:
-  #   print(line)
-
-
-  # for line in segmented[0]:
-  #   # x1 = line[0][0][0]
-  #   # y1 = line[0][0][1]
-  #   # x2 = line[0][0][2]
-  #   # y2 = line[0][0][3]
-  #   x1, y1, x2, y2 = line[0]
-  #   print(x1, y1, x2, y2)
-  #   cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 1)
-
-  # for line in segmented[1]:
-  #   x1, y1, x2, y2 = line[0]
-  #   cv2.line(edges, (x1, y1), (x2, y2), (0, 0, 255), 3)
   return img
 
 
-def detect_lines_and_intersections(img):
+def detect_lines_and_intersections(image):
+  img = image.copy()
   imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
   blur = cv2.medianBlur(imgGray, 5)
@@ -78,26 +111,27 @@ def detect_lines_and_intersections(img):
   thresh_type = cv2.THRESH_BINARY_INV
   bin_img = cv2.adaptiveThreshold(blur, 255, adapt_type, thresh_type, 11, 2)
   
-  lines = cv2.HoughLines(bin_img, 1, np.pi/180, 380)
-
-  # Cluster line angles into 2 groups (vertical and horizontal)
-  segmented = segment_by_angle_kmeans(lines, 2)
-
-  intersections = segmented_intersections(segmented)
+  lines = cv2.HoughLines(bin_img, 1, np.pi/180, 800)
 
   img_with_segmented_lines = np.copy(img)
 
-  vertical_lines = segmented[1]
-  drawLines(img_with_segmented_lines, vertical_lines, (0,255,0))
+  if lines is not None:
+    # Cluster line angles into 2 groups (vertical and horizontal)
+    segmented = segment_by_angle_kmeans(lines, 2)
 
-  horizontal_lines = segmented[0]
-  drawLines(img_with_segmented_lines, horizontal_lines, (0,255,255))
+    intersections = segmented_intersections(segmented)
 
-  for point in intersections:
-    pt = (point[0][0], point[0][1])
-    length = 5
-    cv2.line(img_with_segmented_lines, (pt[0], pt[1]-length), (pt[0], pt[1]+length), (255, 0, 255), 2) # vertical line
-    cv2.line(img_with_segmented_lines, (pt[0]-length, pt[1]), (pt[0]+length, pt[1]), (255, 0, 255), 2)
+    vertical_lines = segmented[1]
+    drawLines(img_with_segmented_lines, vertical_lines, (0,255,0))
+
+    horizontal_lines = segmented[0]
+    drawLines(img_with_segmented_lines, horizontal_lines, (0,255,255))
+
+    for point in intersections:
+      pt = (point[0][0], point[0][1])
+      length = 5
+      cv2.line(img_with_segmented_lines, (pt[0], pt[1]-length), (pt[0], pt[1]+length), (255, 0, 255), 2) # vertical line
+      cv2.line(img_with_segmented_lines, (pt[0]-length, pt[1]), (pt[0]+length, pt[1]), (255, 0, 255), 2)
 
   return img_with_segmented_lines
 

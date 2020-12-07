@@ -4,6 +4,6 @@ python -m pip install -r requirements.txt
 
 python3 -m pip install -t python/lib/python3.7/site-packages -r requirements.txt
 
-export FLASK_APP=server.py
+export FLASK_APP=server.py && flask run --host=0.0.0.0 --port=4000
 
-flask run --port=4000
+forever start -c "flask run --port=4000" ./

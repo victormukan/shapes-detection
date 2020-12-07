@@ -25,20 +25,35 @@ def upload_file():
   id = str(uuid4())
 
   circles = rec.detect_circles(img)
-  cv2.imwrite("tmp/circles.jpg", circles)
+  cv2.imwrite("tmp/circles.jpg", circles['image'])
 
-  lines = rec.detect_lines_and_intersections(img)
-  cv2.imwrite("tmp/lines.jpg", lines)
+  # lines = rec.detect_lines_and_intersections(img)
+  # cv2.imwrite("tmp/lines.jpg", lines)
   
   s3.upload_to_aws("tmp/image.jpg", f"{id}-raw.jpg")
   s3.upload_to_aws("tmp/circles.jpg", f"{id}-circles.jpg")
-  s3.upload_to_aws("tmp/lines.jpg", f"{id}-lines.jpg")
+  # s3.upload_to_aws("tmp/lines.jpg", f"{id}-lines.jpg")
+
+  show_intermediate = request.args.get('show_intermediate')
+
+  intermediate = []
+  if show_intermediate: 
+    for i, int_img in circles['intermediate_images']:
+      cv2.imwrite(f"tmp/intermediate-{i}.jpg", int_img)
+      s3.upload_to_aws(f"tmp/intermediate-{i}.jpg", f"{id}-intermediate-{i}.jpg")
+      intermediate.append(f"https://{BUCKET}.s3.eu-west-2.amazonaws.com/{id}-intermediate-{i}.jpg")
+
 
   return {
     'body': {
       'raw': f"https://{BUCKET}.s3.eu-west-2.amazonaws.com/{id}-raw.jpg",
       'circles': f"https://{BUCKET}.s3.eu-west-2.amazonaws.com/{id}-circles.jpg",
-      'lines': f"https://{BUCKET}.s3.eu-west-2.amazonaws.com/{id}-lines.jpg"  
+      'lines': f"https://{BUCKET}.s3.eu-west-2.amazonaws.com/{id}-lines.jpg",
+      'maxCenterDistance': circles['maxCenterDistance'],
+      'circlesCount': circles['circlesCount'],
+      'intermediate': intermediate,
+      'isIncorrect': circles['maxCenterDistance'] > 0.1,
+      'acceptableDistance': 0.1
     }
   }
 
