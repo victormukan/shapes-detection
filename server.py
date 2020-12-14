@@ -1,5 +1,5 @@
 import cv2
-from flask import Flask, request
+from flask import Flask, request, Response
 import os
 import src.recognition as rec
 import src.s3 as s3
@@ -13,9 +13,10 @@ app = Flask(__name__)
 @app.route('/upload', methods=['POST'])
 def upload_file():
   if 'file' not in request.files:
-    return {
-      "body": "error"
-    }
+    return Response(
+        "Missing image",
+        status=400,
+    )
   
   file = request.files['file']
   file.save(os.path.join('./tmp/', "image.jpg"))
@@ -27,12 +28,9 @@ def upload_file():
   circles = rec.detect_circles(img)
   cv2.imwrite("tmp/circles.jpg", circles['image'])
 
-  # lines = rec.detect_lines_and_intersections(img)
-  # cv2.imwrite("tmp/lines.jpg", lines)
   
   s3.upload_to_aws("tmp/image.jpg", f"{id}-raw.jpg")
   s3.upload_to_aws("tmp/circles.jpg", f"{id}-circles.jpg")
-  # s3.upload_to_aws("tmp/lines.jpg", f"{id}-lines.jpg")
 
   show_intermediate = request.args.get('show_intermediate')
 

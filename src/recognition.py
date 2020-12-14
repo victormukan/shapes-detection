@@ -21,13 +21,16 @@ def detect_circles(image):
   blur = cv2.medianBlur(imgGray, 5)
   intermediate_images.append(blur)
 
-  edges = cv2.Canny(blur, 70, 140)
+  edges = cv2.Canny(blur, 80, 220)
   intermediate_images.append(edges)
 
   size = cv_size(img)
   dimension = min(size)
 
-  circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, dimension/30, param1=8, param2=34, 
+  # dimension/50
+
+
+  circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, 18, param1=8, param2=40, 
     minRadius=int(dimension/20), maxRadius=int(dimension/10))
   
   if circles is not None:
@@ -50,32 +53,32 @@ def detect_circles(image):
     if (len(radiuses) > 0 and len(centers) > 0):
       if (len(radiuses) == 1):
         end = time.time()
-        print("Time elapsed ", end - start)
-        return { 'image': img, 'intermediateImages': intermediate_images, 'maxCenterDistance': 0, 'circlesCount': len(centers) }
+        return { 'image': img, 'time': (end - start) * 1000, 'intermediateImages': intermediate_images, 'maxCenterDistance': 0, 'circlesCount': len(centers) }
 
       avg_radius = sum(radiuses) / len(radiuses)
+
+      print(f"R {avg_radius}")
 
 
       center_distances = find_lines_between_points(centers)
       longest = max(center_distances, key=lambda x:x['length'])
 
-      print(f"longest {longest['length']} radius {avg_radius}")
+      # print(f"longest {longest['length']} radius {avg_radius}")
 
       max_center_distance = longest['length'] / avg_radius * 1.5
 
-      print ('distance', max_center_distance)
+      # print ('distance', max_center_distance)
       for line in center_distances:
         x1, y1 = line['x']
         x2, y2 = line['y']
         cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
         
       end = time.time()
-      print("Time elapsed ", end - start)
-      return { 'image': img, 'intermediateImages': intermediate_images, 'maxCenterDistance': max_center_distance, 'circlesCount': len(centers) }
+      return { 'image': img, 'time': (end - start) * 1000, 'intermediateImages': intermediate_images, 'maxCenterDistance': max_center_distance, 'circlesCount': len(centers) }
 
   end = time.time()
   print("Time elapsed ", end - start)
-  return { 'image': img, 'intermediateImages': [], 'maxCenterDistance': 0, 'circlesCount': 0 }
+  return { 'image': img, 'time': (end - start) * 1000, 'intermediateImages': [], 'maxCenterDistance': 0, 'circlesCount': 0 }
 
 
 def filter_circles_not_in_center(center, size, delta):
